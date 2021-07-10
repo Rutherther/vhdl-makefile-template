@@ -1,0 +1,7 @@
+setMode -bscan
+setcable -p auto
+identify
+
+assignFile -p 1 -file <bitfile>
+program -p 1
+quit
