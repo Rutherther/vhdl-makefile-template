@@ -30,7 +30,7 @@ ALL_SOURCES := $(SOURCES) $(TBSOURCES)
 
 EXECUTABLE := $(SIMDIR)/$(TESTBENCH)
 
-.PHONY: all clean ax309
+.PHONY: all clean xil
 
 compile: $(WORKDIR) $(ALL_SOURCES)
 	@$(COMPILER) -i $(COMPILER_FLAGS) $(ALL_SOURCES)
@@ -52,11 +52,11 @@ run: $(TBDIR)/$(TESTBENCH) $(SIMDIR)
 view:
 	@$(WAVEFORM_VIEWER) $(WAVEFORM_FILE)
 
-ax309:
-	@$(MAKE) -C ax309 all
+xil:
+	@$(MAKE) -C xil all
 
-ax309-flash:
-	@$(MAKE) -C ax309 flash
+xil-flash:
+	@$(MAKE) -C xil flash
 
 clean:
 	@$(RM) -rf $(SIMDIR)
