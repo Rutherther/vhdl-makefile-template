@@ -3,6 +3,7 @@ SIMDIR := $(ROOT)/sim
 export SRCDIR := $(ROOT)/src
 TBDIR := $(ROOT)/testbench
 WORKDIR := $(ROOT)/work
+VHDLEX := vhd
 
 #####################################################
 #                                                   #
@@ -17,7 +18,6 @@ WAVEFORM_VIEWER := gtkwave
 
 COMPILER := ghdl
 COMPILER_FLAGS := --workdir=$(WORKDIR)
-VHDLEX := vhd
 
 STOP_TIME ?= 1000ns
 WAVEFORM_FILE ?= $(SIMDIR)/out.gwh
@@ -32,7 +32,7 @@ EXECUTABLE := $(SIMDIR)/$(TESTBENCH)
 
 .PHONY: all clean xil
 
-compile: $(WORKDIR) $(ALL_SOURCES)
+compile: $(SIMDIR) $(WORKDIR) $(ALL_SOURCES)
 	@$(COMPILER) -i $(COMPILER_FLAGS) $(ALL_SOURCES)
 	@$(COMPILER) -m -o $(EXECUTABLE) $(COMPILER_FLAGS) $(TESTBENCH)
 
