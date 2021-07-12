@@ -16,7 +16,7 @@ TOP_ENTITY_BIT_ESCAPED := $(shell echo $(TOP_ENTITY_BIT) | sed "s=\/=\\\/=g")
 IMPACT_BATCH := impact.cmd
 IMPACT_BATCH_TEMPLATE := impact.cmd.tmplt
 
-SOURCES_LIST := filelist.txt
+PROJECT_FILE := $(shell pwd)/$(TOP_ENTITY).prj
 
 .PHONY: all compile flash clean
 
@@ -25,12 +25,12 @@ all: compile flash
 $(WORKDIR):
 	mkdir $(WORKDIR)
 
-$(SOURCES_LIST):
-	echo $(SOURCES) | tr " " "\n" > $(SOURCES_LIST)
+$(PROJECT_FILE):
+	echo "$(SOURCES)" | tr " " "\n" | sed -e "s/^/work /" - > $(PROJECT_FILE)
 
-compile: clean $(WORKDIR) $(SOURCES_LIST)
+compile: clean $(WORKDIR) $(PROJECT_FILE)
 	cp $(SRCDIR)/*.ucf $(WORKDIR)
-	$(XFLOW) -p $(DEVICE)-$(PACKAGE) -g srclist:$(SOURCES_LIST) -synth xst_vhdl.opt -implement balanced.opt -config bitgen.opt $(TOP_ENTITY_VHDL) -wd work
+	$(XFLOW) -p $(DEVICE)-$(PACKAGE) -synth xst_vhdl.opt -implement balanced.opt -config bitgen.opt $(PROJECT_FILE) -wd work
 
 $(IMPACT_BATCH):
 	sed -e "s=<bitfile>=$(TOP_ENTITY_BIT_ESCAPED)=g" $(IMPACT_BATCH_TEMPLATE) > $(IMPACT_BATCH)
@@ -40,6 +40,7 @@ flash: $(IMPACT_BATCH)
 
 clean:
 	$(RM) -rf $(WORKDIR)
-	$(RM) -rf $(SOURCES_LIST)
+	$(RM) -rf $(PROJECT_FILE)
 	$(RM) -rf $(IMPACT_BATCH)
 	$(RM) -rf _impactbatch.log
+	$(RM) -rf xflow.his
