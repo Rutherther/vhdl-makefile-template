@@ -1,3 +1,5 @@
 impact.cmd
 filelist.txt
 work/
+*.prj
+xflow.his
