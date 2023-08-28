@@ -1,65 +1,56 @@
-export ROOT := $(shell pwd)
-SIMDIR := $(ROOT)/sim
-export SRCDIR := $(ROOT)/src
-TBDIR := $(ROOT)/testbench
-WORKDIR := $(ROOT)/work
+SIMDIR := sim
+BINDIR := bin
+export SRCDIR := src
+TBDIR := testbench
+WORKDIR := work
 VHDLEX := vhd
+
+WORKFILE := $(WORKDIR)/work-obj93.cf
 
 #####################################################
 #                                                   #
 #                 Top level entity                  #
 #                                                   #
 #####################################################
-export TOP_ENTITY := # fill
-export TOP_ENTITY_VHDL := $(SRCDIR)/$(TOP_ENTITY).$(VHDLEX)
+export TOP_ENTITY := # put top entity here
 TESTBENCH ?= $(TOP_ENTITY)_tb # default
 
 WAVEFORM_VIEWER := gtkwave
 
 COMPILER := ghdl
-COMPILER_FLAGS := --workdir=$(WORKDIR)
+COMPILER_FLAGS := --std=08 --ieee=standard --workdir=$(WORKDIR)
 
 STOP_TIME ?= 1000ns
-WAVEFORM_FILE ?= $(SIMDIR)/out.gwh
+RUN_FLAGS := --stop-time=$(STOP_TIME) --stats
 
-RUN_FLAGS := --stop-time=$(STOP_TIME) --vcd=$(WAVEFORM_FILE) --stats
-
-TBSOURCES := $(wildcard $(TBDIR)/*.$(VHDLEX))
-export SOURCES := $(wildcard $(SRCDIR)/*.$(VHDLEX))
+TBSOURCES := $(wildcard $(TBDIR)/*.$(VHDLEX) $(TBDIR)/**/*.$(VHDLEX))
+export SOURCES := $(wildcard $(SRCDIR)/*.$(VHDLEX) $(SRCDIR)/**/*.$(VHDLEX))
 ALL_SOURCES := $(SOURCES) $(TBSOURCES)
-
-EXECUTABLE := $(SIMDIR)/$(TESTBENCH)
 
 .PHONY: all clean xil
 
-compile: $(SIMDIR) $(WORKDIR) $(ALL_SOURCES)
+all: $(SIMDIR)/$(TESTBENCH).ghw
+
+$(BINDIR)/%_tb.out: $(TBDIR)/%_tb.$(VHDLEX) $(WORKFILE) $(BINDIR)
+	@$(COMPILER) -m -o $@ $(COMPILER_FLAGS) $(notdir $(basename $@))
+
+$(BINDIR)/%.out: $(SRCDIR)/%.$(VHDLEX) $(WORKFILE) $(BINDIR)
+	@$(COMPILER) -m -o $@ $(COMPILER_FLAGS) $(notdir $(basename $@))
+
+$(SIMDIR)/%.ghw: $(BINDIR)/%.out
+	$< $(RUN_FLAGS) --wave=$@
+	gsettings set com.geda.gtkwave reload 1
+	gsettings set com.geda.gtkwave reload 0
+	pgrep $(WAVEFORM_VIEWER) || $(WAVEFORM_VIEWER) $@ &
+
+$(WORKFILE): $(WORKDIR) $(ALL_SOURCES)
 	@$(COMPILER) -i $(COMPILER_FLAGS) $(ALL_SOURCES)
-	@$(COMPILER) -m -o $(EXECUTABLE) $(COMPILER_FLAGS) $(TESTBENCH)
 
-all: compile run view
-
-$(TBDIR)/$(TESTBENCH): compile
-
-$(WORKDIR):
-	@mkdir $(WORKDIR)
-
-$(SIMDIR):
-	@mkdir $(SIMDIR)
-
-run: $(TBDIR)/$(TESTBENCH) $(SIMDIR)
-	@$(EXECUTABLE) $(RUN_FLAGS)
-
-view:
-	@$(WAVEFORM_VIEWER) $(WAVEFORM_FILE)
-
-xil:
-	@$(MAKE) -C xil all
-
-xil-flash:
-	@$(MAKE) -C xil flash
+$(BINDIR) $(WORKDIR) $(SIMDIR):
+	@mkdir $@
 
 clean:
-	@$(RM) -rf $(SIMDIR)
-	@$(RM) -rf $(WORKDIR)
+	@$(RM) -rf $(SIMDIR) $(WORKDIR) $(BINDIR)
 	@$(MAKE) -C ax309 clean
 
+$(ALL_SOURCES):
